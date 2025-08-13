@@ -16,8 +16,7 @@ typedef struct {
     uint32_t *pixels;
 } Canvas;
 
-CANVASDEF Canvas create_canvas(size_t width, size_t height);
-CANVASDEF void free_canvas(Canvas *c);
+CANVASDEF Canvas create_canvas(size_t width, size_t height, uint32_t *pixels);
 CANVASDEF void clear_background(Canvas *c, uint32_t color);
 
 
@@ -31,21 +30,17 @@ CANVASDEF int write_png_from_rgba32(const char *filename, const uint32_t *pixels
 
 #ifdef CANVAS_IMPLEMENTATION
 
-CANVASDEF Canvas create_canvas(size_t width, size_t height) {
-    Canvas c;
-    c.width = width;
-    c.height = height;
-    c.pixels = malloc(width * height * sizeof(uint32_t));
-    if (!c.pixels) {
-        perror("malloc failed");
-        exit(1);
-    }
-    return c;
+CANVASDEF Canvas create_canvas(size_t width, size_t height, uint32_t *pixels) {
+    return (Canvas) {
+        .width = width,
+        .height = height,
+        .pixels = pixels
+    };
 }
 
 CANVASDEF void free_canvas(Canvas *c) {
-    free(c->pixels);
     c->pixels = NULL;
+    c->width = c->height = 0;
 }
 
 CANVASDEF void clear_background(Canvas *c, uint32_t color) {
@@ -230,7 +225,7 @@ CANVASDEF int write_png_from_rgba32(const char *filename, const uint32_t *pixels
     idat[pos++] = adl & 0xFF;
 
     if (pos != idat_size) {
-        fprintf(stderr, "inconsistent idat size: pos=%zu idat_size=%zu\n", pos, idat_size);
+        fprintf(stderr, "inconsistent idat size: pos=%lu idat_size=%lu\n", (unsigned long)pos, (unsigned long)idat_size);
         free(idat);
         free(raw);
         goto fail;
