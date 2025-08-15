@@ -7,10 +7,6 @@
 #include <stdint.h>
 
 #ifndef CANVASDEF
-#define CANVASDEF static inline
-#endif
-
-#ifndef CANVASDEF
 /* 
    Define CANVASDEF before including this file to control function linkage.
    Example: #define CANVASDEF static inline
@@ -35,8 +31,24 @@ typedef struct {
 CANVASDEF Canvas create_canvas(size_t width, size_t height, uint32_t *pixels);
 CANVASDEF void free_canvas(Canvas *c);
 CANVASDEF void clear_background(Canvas *c, uint32_t color);
-CANVASDEF void canvas_rect(Canvas *c, Rectangle rec, uint32_t color);
 
+CANVASDEF void canvas_putpixel(Canvas *c, int x, int y, uint32_t color);
+CANVASDEF uint32_t canvas_getpixel(const Canvas *c, int x, int y, uint32_t fallback);
+
+CANVASDEF void canvas_hline(Canvas *c, int x0, int x1, int y, uint32_t color);
+CANVASDEF void canvas_vline(Canvas *c, int x, int y0, int y1, uint32_t color);
+CANVASDEF void canvas_line(Canvas *c, int x0, int y0, int x1, int y1, uint32_t color);
+
+CANVASDEF void canvas_rect(Canvas *c, Rectangle rec, uint32_t color);
+CANVASDEF void canvas_rect_fill(Canvas *c, Rectangle rec, uint32_t color);
+
+CANVASDEF void canvas_circle(Canvas *c, int cx, int cy, int r, uint32_t color);
+CANVASDEF void canvas_circle_fill(Canvas *c, int cx, int cy, int r, uint32_t color);
+
+CANVASDEF void canvas_triangle(Canvas *c, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color);
+CANVASDEF void canvas_triangle_fill(Canvas *c, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color);
+
+/* PNG encoder */
 static uint32_t crc32_table[256];
 CANVASDEF void make_crc32_table(void);
 CANVASDEF uint32_t crc32(const uint8_t *buf, size_t len);
@@ -46,6 +58,11 @@ CANVASDEF int write_chunk(FILE *f, const char type[4], const uint8_t *data, uint
 CANVASDEF int write_png_from_rgba32(const char *filename, const uint32_t *pixels, uint32_t width, uint32_t height);
 
 #ifdef CANVAS_IMPLEMENTATION
+
+/* ---------- helpers (internal) ---------- */
+CANVASDEF int canvas__imax(int a, int b) { return a > b ? a : b; }
+CANVASDEF int canvas__imin(int a, int b) { return a < b ? a : b; }
+CANVASDEF void canvas__swap_int(int *a, int *b) { int t = *a; *a = *b; *b = t; }
 
 CANVASDEF Canvas create_canvas(size_t width, size_t height, uint32_t *pixels) {
     return (Canvas) {
@@ -68,10 +85,187 @@ CANVASDEF void clear_background(Canvas *c, uint32_t color) {
     }
 }
 
+CANVASDEF void canvas_putpixel(Canvas *c, int x, int y, uint32_t color) {
+    if (!c || !c->pixels) return;
+    if (x < 0 || y < 0 || x >= (int)c->width || y >= (int)c->height) return;
+    c->pixels[(size_t)y * c->width + (size_t)x] = color;
+}
+
+CANVASDEF uint32_t canvas_getpixel(const Canvas *c, int x, int y, uint32_t fallback) {
+    if (!c || !c->pixels) return fallback;
+    if (x < 0 || y < 0 || x >= (int)c->width || y >= (int)c->height) return fallback;
+    return c->pixels[(size_t)y * c->width + (size_t)x];
+}
+
+CANVASDEF void canvas_hline(Canvas *c, int x0, int x1, int y, uint32_t color) {
+    if (!c || !c->pixels) return;
+    if (y < 0 || y >= (int)c->height) return;
+    if (x0 > x1) canvas__swap_int(&x0, &x1);
+    if (x1 < 0 || x0 >= (int)c->width) return;
+    if (x0 < 0) x0 = 0;
+    if (x1 >= (int)c->width) x1 = (int)c->width - 1;
+
+    uint32_t *row = c->pixels + (size_t)y * c->width + (size_t)x0;
+    for (int x = x0; x <= x1; ++x) *row++ = color;
+}
+
+CANVASDEF void canvas_vline(Canvas *c, int x, int y0, int y1, uint32_t color) {
+    if (!c || !c->pixels) return;
+    if (x < 0 || x >= (int)c->width) return;
+    if (y0 > y1) canvas__swap_int(&y0, &y1);
+    if (y1 < 0 || y0 >= (int)c->height) return;
+    if (y0 < 0) y0 = 0;
+    if (y1 >= (int)c->height) y1 = (int)c->height - 1;
+
+    uint32_t *p = c->pixels + (size_t)y0 * c->width + (size_t)x;
+    for (int y = y0; y <= y1; ++y) {
+        *p = color;
+        p += c->width;
+    }
+}
+
+CANVASDEF void canvas_line(Canvas *c, int x0, int y0, int x1, int y1, uint32_t color) {
+    if (!c || !c->pixels) return;
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy;
+    while (1) {
+        canvas_putpixel(c, x0, y0, color);
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
+
 CANVASDEF void canvas_rect(Canvas *c, Rectangle rec, uint32_t color) {
-    for (size_t y = rec.y; y < rec.y + rec.h && y < c->height; ++y) {
-        for (size_t x = rec.x; x < rec.x + rec.w && x < c->width; ++x) {
-            CANVAS_PIXEL(*c, x, y) = color;
+    if (rec.w <= 0 || rec.h <= 0) return;
+    int x0 = rec.x, y0 = rec.y, x1 = rec.x + rec.w - 1, y1 = rec.y + rec.h - 1;
+    canvas_hline(c, x0, x1, y0, color);
+    canvas_hline(c, x0, x1, y1, color);
+    canvas_vline(c, x0, y0, y1, color);
+    canvas_vline(c, x1, y0, y1, color);
+
+}
+
+CANVASDEF void canvas_rect_fill(Canvas *c, Rectangle rec, uint32_t color) {
+    if (!c || !c->pixels || rec.w == 0 || rec.h == 0) return;
+    size_t y_end = rec.y + rec.h;
+    size_t x_end = rec.x + rec.w;
+    if (rec.y >= c->height || rec.x >= c->width) return;
+    if (y_end > c->height) y_end = c->height;
+    if (x_end > c->width)  x_end = c->width;
+
+    for (size_t y = rec.y; y < y_end; ++y) {
+        uint32_t *row = c->pixels + y * c->width + rec.x;
+        for (size_t x = rec.x; x < x_end; ++x) *row++ = color;
+    }
+}
+
+CANVASDEF void canvas_circle(Canvas *c, int cx, int cy, int r, uint32_t color) {
+    if (!c || !c->pixels || r <= 0) return;
+    int x = r, y = 0;
+    int err = 1 - x;
+    while (x >= y) {
+        canvas_putpixel(c, cx + x, cy + y, color);
+        canvas_putpixel(c, cx + y, cy + x, color);
+        canvas_putpixel(c, cx - y, cy + x, color);
+        canvas_putpixel(c, cx - x, cy + y, color);
+        canvas_putpixel(c, cx - x, cy - y, color);
+        canvas_putpixel(c, cx - y, cy - x, color);
+        canvas_putpixel(c, cx + y, cy - x, color);
+        canvas_putpixel(c, cx + x, cy - y, color);
+        ++y;
+        if (err < 0) err += 2*y + 1;
+        else { --x; err += 2*(y - x) + 1; }
+    }
+}
+
+CANVASDEF void canvas_circle_fill(Canvas *c, int cx, int cy, int r, uint32_t color) {
+    if (!c || !c->pixels || r <= 0) return;
+    int x = r, y = 0;
+    int err = 1 - x;
+    while (x >= y) {
+        /* draw spans across symmetrical rows */
+        canvas_hline(c, cx - x, cx + x, cy + y, color);
+        canvas_hline(c, cx - x, cx + x, cy - y, color);
+        canvas_hline(c, cx - y, cx + y, cy + x, color);
+        canvas_hline(c, cx - y, cx + y, cy - x, color);
+        ++y;
+        if (err < 0) err += 2*y + 1;
+        else { --x; err += 2*(y - x) + 1; }
+    }
+}
+
+CANVASDEF void canvas_triangle(Canvas *c, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
+    canvas_line(c, x0, y0, x1, y1, color);
+    canvas_line(c, x1, y1, x2, y2, color);
+    canvas_line(c, x2, y2, x0, y0, color);
+}
+
+/* Helpers for filled triangle */
+CANVASDEF void canvas__fill_flat_bottom(Canvas *c, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
+    if (y1 == y0) return;
+    float invslope1 = (float)(x1 - x0) / (float)(y1 - y0);
+    float invslope2 = (float)(x2 - x0) / (float)(y2 - y0);
+    float curx1 = (float)x0;
+    float curx2 = (float)x0;
+    for (int y = y0; y <= y1; ++y) {
+        int xa = (int)(curx1 + 0.5f);
+        int xb = (int)(curx2 + 0.5f);
+        if (xa > xb) canvas__swap_int(&xa, &xb);
+        canvas_hline(c, xa, xb, y, color);
+        curx1 += invslope1;
+        curx2 += invslope2;
+    }
+}
+CANVASDEF void canvas__fill_flat_top(Canvas *c, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
+    if (y2 == y0) return;
+    float invslope1 = (float)(x2 - x0) / (float)(y2 - y0);
+    float invslope2 = (float)(x2 - x1) / (float)(y2 - y1);
+    float curx1 = (float)x2;
+    float curx2 = (float)x2;
+    for (int y = y2; y >= y0; --y) {
+        int xa = (int)(curx1 + 0.5f);
+        int xb = (int)(curx2 + 0.5f);
+        if (xa > xb) canvas__swap_int(&xa, &xb);
+        canvas_hline(c, xa, xb, y, color);
+        curx1 -= invslope1;
+        curx2 -= invslope2;
+    }
+}
+
+CANVASDEF void canvas_triangle_fill(Canvas *c, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
+    /* sort by y (y0 <= y1 <= y2) */
+    if (y1 < y0) { canvas__swap_int(&y0, &y1); canvas__swap_int(&x0, &x1); }
+    if (y2 < y0) { canvas__swap_int(&y0, &y2); canvas__swap_int(&x0, &x2); }
+    if (y2 < y1) { canvas__swap_int(&y1, &y2); canvas__swap_int(&x1, &x2); }
+
+    if (y0 == y2) { /* degenerate: all on one scanline */
+        int xa = canvas__imin(canvas__imin(x0, x1), x2);
+        int xb = canvas__imax(canvas__imax(x0, x1), x2);
+        canvas_hline(c, xa, xb, y0, color);
+        return;
+    }
+
+    if (y1 == y0) {
+        /* flat-top */
+        if (x1 < x0) canvas__swap_int(&x0, &x1);
+        canvas__fill_flat_top(c, x0, y0, x1, y1, x2, y2, color);
+    } else if (y1 == y2) {
+        /* flat-bottom */
+        if (x2 < x1) canvas__swap_int(&x1, &x2);
+        canvas__fill_flat_bottom(c, x0, y0, x1, y1, x2, y2, color);
+    } else {
+        /* general: split at y1 on edge 0-2 */
+        int x3 = x0 + (int)((float)(y1 - y0) / (float)(y2 - y0) * (float)(x2 - x0) + 0.5f);
+        /* two flat triangles */
+        if (x1 < x3) {
+            canvas__fill_flat_bottom(c, x0, y0, x1, y1, x3, y1, color);
+            canvas__fill_flat_top(c, x1, y1, x3, y1, x2, y2, color);
+        } else {
+            canvas__fill_flat_bottom(c, x0, y0, x3, y1, x1, y1, color);
+            canvas__fill_flat_top(c, x3, y1, x1, y1, x2, y2, color);
         }
     }
 }
