@@ -10,15 +10,32 @@
 #define CANVASDEF static inline
 #endif
 
+#ifndef CANVASDEF
+/* 
+   Define CANVASDEF before including this file to control function linkage.
+   Example: #define CANVASDEF static inline
+   This is useful for single-file projects to let the compiler inline functions
+   and remove unused ones.
+*/
+#define CANVASDEF
+#endif /* CANVASDEF */
+
+typedef struct {
+    size_t x, y, w, h;
+} Rectangle;
+
 typedef struct {
     size_t width, height;
     // 0xRRGGBBAA
     uint32_t *pixels;
 } Canvas;
 
-CANVASDEF Canvas create_canvas(size_t width, size_t height, uint32_t *pixels);
-CANVASDEF void clear_background(Canvas *c, uint32_t color);
+#define CANVAS_PIXEL(c, x, y) (c).pixels[(y) * (c).width + (x)]
 
+CANVASDEF Canvas create_canvas(size_t width, size_t height, uint32_t *pixels);
+CANVASDEF void free_canvas(Canvas *c);
+CANVASDEF void clear_background(Canvas *c, uint32_t color);
+CANVASDEF void canvas_rect(Canvas *c, Rectangle rec, uint32_t color);
 
 static uint32_t crc32_table[256];
 CANVASDEF void make_crc32_table(void);
@@ -46,7 +63,15 @@ CANVASDEF void free_canvas(Canvas *c) {
 CANVASDEF void clear_background(Canvas *c, uint32_t color) {
     for (size_t y = 0; y < c->height; ++y) {
         for (size_t x = 0; x < c->width; ++x) {
-            c->pixels[y * c->width + x] = color;
+            CANVAS_PIXEL(*c, x, y) = color;
+        }
+    }
+}
+
+CANVASDEF void canvas_rect(Canvas *c, Rectangle rec, uint32_t color) {
+    for (size_t y = rec.y; y < rec.y + rec.h && y < c->height; ++y) {
+        for (size_t x = rec.x; x < rec.x + rec.w && x < c->width; ++x) {
+            CANVAS_PIXEL(*c, x, y) = color;
         }
     }
 }
