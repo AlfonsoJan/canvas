@@ -11,13 +11,13 @@ static uint32_t pixels[WIDTH * HEIGHT];
 int main() {
     Canvas c = create_canvas(WIDTH, HEIGHT, pixels);
     clear_background(&c, BACKGROUND_COLOR);
-    canvas_rect_fill(&c, (Rectangle){
+    canvas_rect_fill(&c, (Rectangle) {
         .x = 10,
         .y = 10,
         .w = 580,
         .h = 430
     }, SHAPE_COLORS);
-    canvas_rect(&c, (Rectangle){
+    canvas_rect(&c, (Rectangle) {
         .x = 10,
         .y = 460,
         .w = 580,

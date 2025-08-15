@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 #ifndef CANVASDEF
-/* 
+/*
    Define CANVASDEF before including this file to control function linkage.
    Example: #define CANVASDEF static inline
    This is useful for single-file projects to let the compiler inline functions
@@ -60,9 +60,17 @@ CANVASDEF int write_png_from_rgba32(const char *filename, const uint32_t *pixels
 #ifdef CANVAS_IMPLEMENTATION
 
 /* ---------- helpers (internal) ---------- */
-CANVASDEF int canvas__imax(int a, int b) { return a > b ? a : b; }
-CANVASDEF int canvas__imin(int a, int b) { return a < b ? a : b; }
-CANVASDEF void canvas__swap_int(int *a, int *b) { int t = *a; *a = *b; *b = t; }
+CANVASDEF int canvas__imax(int a, int b) {
+    return a > b ? a : b;
+}
+CANVASDEF int canvas__imin(int a, int b) {
+    return a < b ? a : b;
+}
+CANVASDEF void canvas__swap_int(int *a, int *b) {
+    int t = *a;
+    *a = *b;
+    *b = t;
+}
 
 CANVASDEF Canvas create_canvas(size_t width, size_t height, uint32_t *pixels) {
     return (Canvas) {
@@ -133,8 +141,14 @@ CANVASDEF void canvas_line(Canvas *c, int x0, int y0, int x1, int y1, uint32_t c
         canvas_putpixel(c, x0, y0, color);
         if (x0 == x1 && y0 == y1) break;
         int e2 = 2 * err;
-        if (e2 >= dy) { err += dy; x0 += sx; }
-        if (e2 <= dx) { err += dx; y0 += sy; }
+        if (e2 >= dy) {
+            err += dy;
+            x0 += sx;
+        }
+        if (e2 <= dx) {
+            err += dx;
+            y0 += sy;
+        }
     }
 }
 
@@ -176,8 +190,11 @@ CANVASDEF void canvas_circle(Canvas *c, int cx, int cy, int r, uint32_t color) {
         canvas_putpixel(c, cx + y, cy - x, color);
         canvas_putpixel(c, cx + x, cy - y, color);
         ++y;
-        if (err < 0) err += 2*y + 1;
-        else { --x; err += 2*(y - x) + 1; }
+        if (err < 0) err += 2 * y + 1;
+        else {
+            --x;
+            err += 2 * (y - x) + 1;
+        }
     }
 }
 
@@ -192,8 +209,11 @@ CANVASDEF void canvas_circle_fill(Canvas *c, int cx, int cy, int r, uint32_t col
         canvas_hline(c, cx - y, cx + y, cy + x, color);
         canvas_hline(c, cx - y, cx + y, cy - x, color);
         ++y;
-        if (err < 0) err += 2*y + 1;
-        else { --x; err += 2*(y - x) + 1; }
+        if (err < 0) err += 2 * y + 1;
+        else {
+            --x;
+            err += 2 * (y - x) + 1;
+        }
     }
 }
 
@@ -237,9 +257,18 @@ CANVASDEF void canvas__fill_flat_top(Canvas *c, int x0, int y0, int x1, int y1, 
 
 CANVASDEF void canvas_triangle_fill(Canvas *c, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
     /* sort by y (y0 <= y1 <= y2) */
-    if (y1 < y0) { canvas__swap_int(&y0, &y1); canvas__swap_int(&x0, &x1); }
-    if (y2 < y0) { canvas__swap_int(&y0, &y2); canvas__swap_int(&x0, &x2); }
-    if (y2 < y1) { canvas__swap_int(&y1, &y2); canvas__swap_int(&x1, &x2); }
+    if (y1 < y0) {
+        canvas__swap_int(&y0, &y1);
+        canvas__swap_int(&x0, &x1);
+    }
+    if (y2 < y0) {
+        canvas__swap_int(&y0, &y2);
+        canvas__swap_int(&x0, &x2);
+    }
+    if (y2 < y1) {
+        canvas__swap_int(&y1, &y2);
+        canvas__swap_int(&x1, &x2);
+    }
 
     if (y0 == y2) { /* degenerate: all on one scanline */
         int xa = canvas__imin(canvas__imin(x0, x1), x2);
