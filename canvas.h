@@ -26,11 +26,11 @@ typedef struct {
     uint32_t *pixels;
 } Canvas;
 
-#define CANVAS_PIXEL(c, x, y) (c).pixels[(y) * (c).width + (x)]
-
 CANVASDEF Canvas create_canvas(size_t width, size_t height, uint32_t *pixels);
 CANVASDEF void free_canvas(Canvas *c);
 CANVASDEF void clear_background(Canvas *c, uint32_t color);
+
+CANVASDEF int32_t RGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
 CANVASDEF void canvas_putpixel(Canvas *c, int x, int y, uint32_t color);
 CANVASDEF uint32_t canvas_getpixel(const Canvas *c, int x, int y, uint32_t fallback);
@@ -88,9 +88,13 @@ CANVASDEF void free_canvas(Canvas *c) {
 CANVASDEF void clear_background(Canvas *c, uint32_t color) {
     for (size_t y = 0; y < c->height; ++y) {
         for (size_t x = 0; x < c->width; ++x) {
-            CANVAS_PIXEL(*c, x, y) = color;
+            canvas_putpixel(c, x, y, color);
         }
     }
+}
+
+CANVASDEF int32_t RGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+    return ((uint32_t)r << 24) | ((uint32_t)g << 16) | ((uint32_t)b << 8) | a;
 }
 
 CANVASDEF void canvas_putpixel(Canvas *c, int x, int y, uint32_t color) {

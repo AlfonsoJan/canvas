@@ -1,0 +1,20 @@
+name: no-build build
+on: [push, pull_request]
+
+jobs:
+  ubuntu:
+    strategy:
+      matrix:
+        cc: [gcc, clang]
+        test:
+          - { name: test_canvas, src: tests/test_canvas.c }
+          - { name: test_png,    src: tests/test_png.c }
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone GIT repo
+        uses: actions/checkout@v4
+      - name: Build & run ${{ matrix.test.name }} with ${{ matrix.cc }}
+        run: |
+          mkdir -p build
+          ${{ matrix.cc }} o build/${{ matrix.test.name }} ${{ matrix.test.src }} -Wall -Wextra -Werror
+          ./build/${{ matrix.test.name }}
