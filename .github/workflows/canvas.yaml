@@ -16,5 +16,5 @@ jobs:
       - name: Build & run ${{ matrix.test.name }} with ${{ matrix.cc }}
         run: |
           mkdir -p build
-          ${{ matrix.cc }} o build/${{ matrix.test.name }} ${{ matrix.test.src }} -Wall -Wextra -Werror
+          ${{ matrix.cc }} -o build/${{ matrix.test.name }} ${{ matrix.test.src }} -Wall -Wextra -Werror
           ./build/${{ matrix.test.name }}
