@@ -7,7 +7,7 @@
 
 #include "test.h"
 
-int main() {
+int main(void) {
     uint32_t pix[H * W];
     Canvas c = create_canvas(W, H, pix);
 

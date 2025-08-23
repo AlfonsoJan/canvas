@@ -18,8 +18,8 @@ jobs:
         run: |
           mkdir -p build
           call "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
-          ${{ matrix.cc }} /Fe:build\${{ matrix.test.name }}.exe ${{ matrix.test.src }} /Wall /WX
-          ./build/${{ matrix.test.name }}.exe
+          ${{ matrix.cc }} /Fe:build\${{ matrix.test.name }}.exe ${{ matrix.test.src }} /Wall /WX /wd4464
+          build\${{ matrix.test.name }}.exe
   macos:
     strategy:
       matrix:
