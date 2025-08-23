@@ -1,4 +1,4 @@
-name: no-build build
+name: canvas build
 on: [push, pull_request]
 
 jobs:
