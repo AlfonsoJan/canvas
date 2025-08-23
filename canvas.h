@@ -158,11 +158,11 @@ CANVASDEF void canvas_line(Canvas *c, int x0, int y0, int x1, int y1, uint32_t c
 
 CANVASDEF void canvas_rect(Canvas *c, Rectangle rec, uint32_t color) {
     if (rec.w <= 0 || rec.h <= 0) return;
-    int x0 = rec.x, y0 = rec.y, x1 = rec.x + rec.w - 1, y1 = rec.y + rec.h - 1;
-    canvas_hline(c, x0, x1, y0, color);
-    canvas_hline(c, x0, x1, y1, color);
-    canvas_vline(c, x0, y0, y1, color);
-    canvas_vline(c, x1, y0, y1, color);
+    size_t x0 = rec.x, y0 = rec.y, x1 = rec.x + rec.w - 1, y1 = rec.y + rec.h - 1;
+    canvas_hline(c, (int)x0, (int)x1, (int)y0, color);
+    canvas_hline(c, (int)x0, (int)x1, (int)y1, color);
+    canvas_vline(c, (int)x0, (int)y0, (int)y1, color);
+    canvas_vline(c, (int)x1, (int)y0, (int)y1, color);
 
 }
 
