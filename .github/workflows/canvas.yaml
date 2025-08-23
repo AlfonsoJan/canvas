@@ -1,7 +1,23 @@
-name: no-build build
+name: canvas build
 on: [push, pull_request]
 
 jobs:
+  macos:
+    strategy:
+      matrix:
+        cc: [clang]
+        test:
+          - { name: test_canvas, src: test/test_canvas.c }
+          - { name: test_png,    src: test/test_png.c }
+    runs-on: macos-latest
+    steps:
+      - name: Clone GIT repo
+        uses: actions/checkout@v4
+      - name: Build & run ${{ matrix.test.name }} with ${{ matrix.cc }}
+        run: |
+          mkdir -p build
+          ${{ matrix.cc }} -o build/${{ matrix.test.name }} ${{ matrix.test.src }} -Wall -Wextra -Werror
+          ./build/${{ matrix.test.name }}
   ubuntu:
     strategy:
       matrix:
