@@ -88,7 +88,7 @@ CANVASDEF void free_canvas(Canvas *c) {
 CANVASDEF void clear_background(Canvas *c, uint32_t color) {
     for (size_t y = 0; y < c->height; ++y) {
         for (size_t x = 0; x < c->width; ++x) {
-            canvas_putpixel(c, x, y, color);
+            canvas_putpixel(c, (int)x, (int)y, color);
         }
     }
 }
@@ -142,7 +142,7 @@ CANVASDEF void canvas_line(Canvas *c, int x0, int y0, int x1, int y1, uint32_t c
     int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
     int err = dx + dy;
     while (1) {
-        canvas_putpixel(c, x0, y0, color);
+        canvas_putpixel(c, (int)x0, (int)y0, color);
         if (x0 == x1 && y0 == y1) break;
         int e2 = 2 * err;
         if (e2 >= dy) {
@@ -158,11 +158,11 @@ CANVASDEF void canvas_line(Canvas *c, int x0, int y0, int x1, int y1, uint32_t c
 
 CANVASDEF void canvas_rect(Canvas *c, Rectangle rec, uint32_t color) {
     if (rec.w <= 0 || rec.h <= 0) return;
-    int x0 = rec.x, y0 = rec.y, x1 = rec.x + rec.w - 1, y1 = rec.y + rec.h - 1;
-    canvas_hline(c, x0, x1, y0, color);
-    canvas_hline(c, x0, x1, y1, color);
-    canvas_vline(c, x0, y0, y1, color);
-    canvas_vline(c, x1, y0, y1, color);
+    size_t x0 = rec.x, y0 = rec.y, x1 = rec.x + rec.w - 1, y1 = rec.y + rec.h - 1;
+    canvas_hline(c, (int)x0, (int)x1, (int)y0, color);
+    canvas_hline(c, (int)x0, (int)x1, (int)y1, color);
+    canvas_vline(c, (int)x0, (int)y0, (int)y1, color);
+    canvas_vline(c, (int)x1, (int)y0, (int)y1, color);
 
 }
 
@@ -185,14 +185,15 @@ CANVASDEF void canvas_circle(Canvas *c, int cx, int cy, int r, uint32_t color) {
     int x = r, y = 0;
     int err = 1 - x;
     while (x >= y) {
-        canvas_putpixel(c, cx + x, cy + y, color);
-        canvas_putpixel(c, cx + y, cy + x, color);
-        canvas_putpixel(c, cx - y, cy + x, color);
-        canvas_putpixel(c, cx - x, cy + y, color);
-        canvas_putpixel(c, cx - x, cy - y, color);
-        canvas_putpixel(c, cx - y, cy - x, color);
-        canvas_putpixel(c, cx + y, cy - x, color);
-        canvas_putpixel(c, cx + x, cy - y, color);
+        canvas_putpixel(c, (int)cx + x, (int)cy + y, color);
+        canvas_putpixel(c, (int)cx + y, (int)cy + x, color);
+        canvas_putpixel(c, (int)cx + y, (int)cy + x, color);
+        canvas_putpixel(c, (int)cx - y, (int)cy + x, color);
+        canvas_putpixel(c, (int)cx - x, (int)cy + y, color);
+        canvas_putpixel(c, (int)cx - x, (int)cy - y, color);
+        canvas_putpixel(c, (int)cx - y, (int)cy - x, color);
+        canvas_putpixel(c, (int)cx + y, (int)cy - x, color);
+        canvas_putpixel(c, (int)cx + x, (int)cy - y, color);
         ++y;
         if (err < 0) err += 2 * y + 1;
         else {
