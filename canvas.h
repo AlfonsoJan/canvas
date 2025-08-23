@@ -57,6 +57,19 @@ CANVASDEF int write_be32(FILE *f, uint32_t v);
 CANVASDEF int write_chunk(FILE *f, const char type[4], const uint8_t *data, uint32_t len);
 CANVASDEF int write_png_from_rgba32(const char *filename, const uint32_t *pixels, uint32_t width, uint32_t height);
 
+typedef struct {
+    FILE *f;
+    size_t width, height;
+    uint8_t *y_plane;
+    uint8_t *u_plane;
+    uint8_t *v_plane;
+} Y4MWriter;
+
+
+CANVASDEF Y4MWriter *y4m_start(const char *filename, size_t width, size_t height, int fps);
+CANVASDEF void y4m_write_frame(Y4MWriter *w, const Canvas *c);
+CANVASDEF void y4m_end(Y4MWriter *w);
+
 #ifdef CANVAS_IMPLEMENTATION
 
 /* ---------- helpers (internal) ---------- */
@@ -503,6 +516,71 @@ CANVASDEF int write_png_from_rgba32(const char *filename, const uint32_t *pixels
 fail:
     if (f) fclose(f);
     return -1;
+}
+
+CANVASDEF Y4MWriter *y4m_start(const char *filename, size_t width, size_t height, int fps) {
+    Y4MWriter *w = malloc(sizeof(*w));
+    if (!w) return NULL;
+
+#if defined(_MSC_VER)
+    if (fopen_s(&w->f, filename, "wb") != 0) {
+        free(w);
+        return NULL;
+    }
+#else
+    w->f = fopen(filename, "wb");
+    if (!w->f) {
+        free(w);
+        return NULL;
+    }
+#endif
+
+    w->width = width;
+    w->height = height;
+
+    // Allocate planes once
+    w->y_plane = malloc(width * height);
+    w->u_plane = malloc(width * height);
+    w->v_plane = malloc(width * height);
+    if (!w->y_plane || !w->u_plane || !w->v_plane) {
+        fclose(w->f);
+        free(w->y_plane);
+        free(w->u_plane);
+        free(w->v_plane);
+        free(w);
+        return NULL;
+    }
+
+    // Write YUV4MPEG2 header
+    fprintf(w->f, "YUV4MPEG2 W%lu H%lu F%d:1 Ip A1:1 C444\n", (unsigned long)width, (unsigned long)height, fps);
+    return w;
+}
+
+CANVASDEF void y4m_write_frame(Y4MWriter *w, const Canvas *c) {
+    fprintf(w->f, "FRAME\n");
+
+    for (size_t i = 0; i < w->width * w->height; i++) {
+        uint8_t r = (c->pixels[i] >> 24) & 0xFF;
+        uint8_t g = (c->pixels[i] >> 16) & 0xFF;
+        uint8_t b = (c->pixels[i] >> 8) & 0xFF;
+
+        w->y_plane[i] = (uint8_t)( 0.299 * r + 0.587 * g + 0.114 * b);
+        w->u_plane[i] = (uint8_t)(-0.169 * r - 0.331 * g + 0.5 * b + 128);
+        w->v_plane[i] = (uint8_t)( 0.5 * r - 0.419 * g - 0.081 * b + 128);
+    }
+
+    fwrite(w->y_plane, 1, w->width * w->height, w->f);
+    fwrite(w->u_plane, 1, w->width * w->height, w->f);
+    fwrite(w->v_plane, 1, w->width * w->height, w->f);
+}
+
+CANVASDEF void y4m_end(Y4MWriter *w) {
+    if (!w) return;
+    fclose(w->f);
+    free(w->y_plane);
+    free(w->u_plane);
+    free(w->v_plane);
+    free(w);
 }
 
 #endif // CANVAS_IMPLEMENTATION
