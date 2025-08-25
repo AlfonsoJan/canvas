@@ -34,6 +34,8 @@ int main(void) {
 }
 ```
 
+---
+
 ### Mandolbrot
 
 ![mandelbrot](demos/mandelbrot.png "Mandelbrot")
