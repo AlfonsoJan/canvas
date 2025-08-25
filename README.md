@@ -40,6 +40,8 @@ int main(void) {
 
 ![mandelbrot](demos/mandelbrot.png "Mandelbrot")
 
+See [mandelbrot](demos/mandelbrot.c)
+
 ## Memory Ownership
 
 The `Canvas` struct does not allocate or free memory for `pixels`.
