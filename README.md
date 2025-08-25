@@ -36,11 +36,11 @@ int main(void) {
 
 ---
 
-### Mandolbrot
+### Mandelbrot
 
-![mandelbrot](demos/mandelbrot.png "Mandelbrot")
+![mandelbret](demos/mandelbrot.png "Mandelbrot")
 
-See [mandelbrot](demos/mandelbrot.c)
+See [mandelbret](demos/mandelbrot.c)
 
 ## Memory Ownership
 
