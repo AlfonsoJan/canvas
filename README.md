@@ -9,7 +9,7 @@ A single-header C library for creating RGBA32 images and saving them as PNG file
 * Simple API for drawing and saving to PNG or YUV4MPEG2
 * No dynamic allocation inside `create_canvas` - caller controls memory
 
-## Example
+## Quick Example
 
 ```c
 #define CANVAS_IMPLEMENTATION
@@ -33,6 +33,8 @@ int main(void) {
     return 0;
 }
 ```
+
+![mandelbrot](demos/mandelbrot.png "Title")
 
 ## Memory Ownership
 
