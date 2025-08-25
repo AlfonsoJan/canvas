@@ -34,7 +34,9 @@ int main(void) {
 }
 ```
 
-![mandelbrot](demos/mandelbrot.png "Title")
+### Mandolbrot
+
+![mandelbrot](demos/mandelbrot.png "Mandelbrot")
 
 ## Memory Ownership
 
