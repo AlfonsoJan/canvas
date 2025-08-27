@@ -1,6 +1,6 @@
 # Canvas.h
 
-A single-header C library for creating RGBA32 images and saving them as PNG files — no external dependencies.
+A single-header C library for creating RGBA32 images and saving them as PNG files.
 
 ## Features
 
@@ -36,11 +36,19 @@ int main(void) {
 
 ---
 
+### Voronoi
+
+![voronoi](demos/vornoi.png "Voronoi")
+
+See [voronoi](demos/voronoi.c)
+
+---
+
 ### Mandelbrot
 
-![mandelbret](demos/mandelbrot.png "Mandelbrot")
+![mandelbrot](demos/mandelbrot.png "Mandelbrot")
 
-See [mandelbret](demos/mandelbrot.c)
+See [mandelbrot](demos/mandelbrot.c)
 
 ## Memory Ownership
 
