@@ -38,7 +38,7 @@ int main(void) {
 
 ### Voronoi
 
-![voronoi](demos/vornoi.png "Voronoi")
+![voronoi](demos/voronoi.png "Voronoi")
 
 See [voronoi](demos/voronoi.c)
 

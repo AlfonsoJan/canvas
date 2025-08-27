@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <time.h> 
+#include <time.h>
 
 #define CANVASDEF static inline
 #define CANVAS_IMPLEMENTATION
@@ -29,12 +29,12 @@ void generate_random_samples() {
 void color_by_nearest_sample(Canvas *c) {
     for (int y = 0; y < (int)c->height; ++y) {
         for (int x = 0; x < (int)c->width; ++x) {
-            unsigned long dist = (unsigned long)-1;
+            unsigned long dist = (unsigned long) -1;
             Sample sample;
             for (size_t i = 0; i < N_SAMPLES; ++i) {
                 long dx = (long)x - (long)samples[i].x;
                 long dy = (long)y - (long)samples[i].y;
-                unsigned long d2 = (unsigned long)(dx*dx + dy*dy);
+                unsigned long d2 = (unsigned long)(dx * dx + dy * dy);
                 if (d2 < dist) {
                     dist = d2;
                     sample = samples[i];

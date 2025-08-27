@@ -14,11 +14,11 @@ static inline uint32_t palette(double t) {
     double r = 0.5 + 0.5 * cos(TAU * (t + 0.00));
     double g = 0.5 + 0.5 * cos(TAU * (t + 0.33));
     double b = 0.5 + 0.5 * cos(TAU * (t + 0.67));
-    if (r < 0) r = 0; 
+    if (r < 0) r = 0;
     if (r > 1) r = 1;
-    if (g < 0) g = 0; 
+    if (g < 0) g = 0;
     if (g > 1) g = 1;
-    if (b < 0) b = 0; 
+    if (b < 0) b = 0;
     if (b > 1) b = 1;
     return RGB((uint8_t)(r * 255.0), (uint8_t)(g * 255.0), (uint8_t)(b * 255.0));
 }
